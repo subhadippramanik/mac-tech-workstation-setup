@@ -1,4 +1,4 @@
-# developer-mac-setup
+# mac-tech-workstation-setup
 
 Interactive setup scripts for a new macOS development machine.
 
@@ -52,6 +52,7 @@ The script asks for confirmation before each install.
 
 - Raycast
 - Freeplane
+- GanttProject
 - Adobe Acrobat Reader
 
 ### Drivers & Hardware
