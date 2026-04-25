@@ -5,6 +5,8 @@ set -uo pipefail
 APP_DIR="${HOME}/Applications"
 SUDO_KEEPALIVE_PID=""
 INSTALL_ERRORS=()
+SHOW_GITHUB_SSH_KEY=0
+GITHUB_SSH_PUBLIC_KEY=""
 
 header() {
     echo "============================================================"
@@ -133,6 +135,73 @@ require_brew() {
         return 1
     fi
     return 0
+}
+
+has_github_ssh_key() {
+    [[ -f "${HOME}/.ssh/id_ed25519" && -f "${HOME}/.ssh/id_ed25519.pub" ]]
+}
+
+ensure_github_ssh_key() {
+    local ssh_dir="${HOME}/.ssh"
+    local ssh_config="${ssh_dir}/config"
+    local key_path="${ssh_dir}/id_ed25519"
+    local key_pub_path="${key_path}.pub"
+    local key_email
+
+    if has_github_ssh_key; then
+        return 0
+    fi
+
+    key_email="$(git config --get user.email 2>/dev/null || true)"
+    if [[ -z "$key_email" ]]; then
+        key_email="your_email@example.com"
+    fi
+
+    echo "No SSH key found. Creating and configuring a GitHub SSH key..."
+    mkdir -p "$ssh_dir" || return 1
+    chmod 700 "$ssh_dir" || return 1
+
+    ssh-keygen -t ed25519 -f "$key_path" -N "" || return 1
+    eval "$(ssh-agent -s)" >/dev/null 2>&1 || true
+    ssh-add --apple-use-keychain "$key_path" || return 1
+
+    if ! grep -Eq '^Host[[:space:]]+github\.com([[:space:]]|$)' "$ssh_config" 2>/dev/null; then
+        {
+            echo ""
+            echo "Host github.com"
+            echo "  AddKeysToAgent yes"
+            echo "  UseKeychain yes"
+            echo "  IdentityFile ~/.ssh/id_ed25519"
+        } >> "$ssh_config" || return 1
+    fi
+
+    chmod 600 "$ssh_config" 2>/dev/null || true
+
+    if [[ -f "$key_pub_path" ]]; then
+        GITHUB_SSH_PUBLIC_KEY="$(cat "$key_pub_path")"
+        if [[ -n "$GITHUB_SSH_PUBLIC_KEY" ]]; then
+            SHOW_GITHUB_SSH_KEY=1
+        fi
+    fi
+
+    return 0
+}
+
+print_github_ssh_section() {
+    if [[ "$SHOW_GITHUB_SSH_KEY" -ne 1 ]]; then
+        return
+    fi
+
+    echo
+    echo "================ GitHub SSH Key Setup ================"
+    echo "Add this public key to GitHub:"
+    echo
+    echo "$GITHUB_SSH_PUBLIC_KEY"
+    echo
+    echo "Go to GitHub:"
+    echo "Settings -> SSH and GPG keys -> New SSH key"
+    echo "Paste the copied key and save."
+    echo "======================================================="
 }
 
 has_homebrew_python() {
@@ -408,6 +477,12 @@ main() {
         attempt_install "Git" install_git
     fi
 
+    if has_github_ssh_key; then
+        echo "GitHub SSH key is already configured."
+    elif confirm "GitHub SSH key is not configured. Set it up now?"; then
+        attempt_install "GitHub SSH Key" ensure_github_ssh_key
+    fi
+
     if app_installed "Google Chrome"; then
         echo "Google Chrome is already installed."
     elif confirm "Google Chrome is not installed. Install now?"; then
@@ -505,6 +580,7 @@ main() {
     fi
 
     print_error_summary
+    print_github_ssh_section
     echo "Done."
 }
 
