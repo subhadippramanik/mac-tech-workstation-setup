@@ -17,6 +17,7 @@ header() {
     echo "  [Productivity]        Raycast, Freeplane, GanttProject, Adobe Acrobat Reader"
     echo "  [Drivers & Hardware]  DisplayLink Manager"
     echo "  [AI Tools]            AnythingLLM"
+    echo "Feedback or tool requests: https://github.com/subhadippramanik/mac-tech-workstation-setup"
     echo "============================================================"
 }
 
