@@ -41,6 +41,7 @@ Console output styling:
 - Homebrew
 - Git
 - Google Chrome
+- Ulaa
 
 ### Development Tools
 

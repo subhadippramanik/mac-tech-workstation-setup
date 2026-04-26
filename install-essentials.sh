@@ -16,7 +16,7 @@ header() {
     echo "============================================================"
     echo "MacOS Interactive Installer"
     echo "Installs by category:"
-    echo "  [Core Setup]          Homebrew, Git, Google Chrome"
+    echo "  [Core Setup]          Homebrew, Git, Google Chrome, Ulaa"
     echo "  [Development Tools]   VS Code, iTerm2, zsh, Oh My Zsh, Python, Golang, Bruno"
     echo "  [Productivity]        Raycast, Freeplane, GanttProject, Adobe Acrobat Reader"
     echo "  [Drivers & Hardware]  DisplayLink Manager"
@@ -411,6 +411,18 @@ install_chrome() {
     install_completed_msg "Google Chrome"
 }
 
+install_ulaa() {
+    if app_installed "Ulaa"; then
+        installed_msg "Ulaa"
+        return
+    fi
+
+    require_brew || return
+    echo "Installing Ulaa..."
+    install_cask ulaa || return 1
+    install_completed_msg "Ulaa"
+}
+
 install_freeplane() {
     if app_installed "Freeplane"; then
         installed_msg "Freeplane"
@@ -533,6 +545,12 @@ main() {
         installed_msg "Google Chrome"
     elif confirm_install_prompt "Google Chrome"; then
         attempt_install "Google Chrome" install_chrome
+    fi
+
+    if app_installed "Ulaa"; then
+        installed_msg "Ulaa"
+    elif confirm_install_prompt "Ulaa"; then
+        attempt_install "Ulaa" install_ulaa
     fi
 
     echo
