@@ -8,6 +8,10 @@ INSTALL_ERRORS=()
 SHOW_GITHUB_SSH_KEY=0
 GITHUB_SSH_PUBLIC_KEY=""
 
+COLOR_GREEN="\033[32m"
+COLOR_YELLOW="\033[33m"
+COLOR_RESET="\033[0m"
+
 header() {
     echo "============================================================"
     echo "MacOS Interactive Installer"
@@ -16,9 +20,38 @@ header() {
     echo "  [Development Tools]   VS Code, iTerm2, zsh, Oh My Zsh, Python, Golang, Bruno"
     echo "  [Productivity]        Raycast, Freeplane, GanttProject, Adobe Acrobat Reader"
     echo "  [Drivers & Hardware]  DisplayLink Manager"
-    echo "  [AI Tools]            AnythingLLM"
+    echo "  [AI Tools]            AnythingLLM, Ollama"
     echo "Feedback or tool requests: https://github.com/subhadippramanik/mac-tech-workstation-setup"
     echo "============================================================"
+}
+
+color_green() {
+    printf "%b%s%b" "$COLOR_GREEN" "$1" "$COLOR_RESET"
+}
+
+color_yellow() {
+    printf "%b%s%b" "$COLOR_YELLOW" "$1" "$COLOR_RESET"
+}
+
+installed_msg() {
+    local software_name="$1"
+    echo "$(color_green "$software_name") is already installed."
+}
+
+installed_with_version_msg() {
+    local software_name="$1"
+    local version_value="$2"
+    echo "$(color_green "$software_name") is already installed: ${version_value}"
+}
+
+install_completed_msg() {
+    local software_name="$1"
+    echo "$(color_green "$software_name") installed."
+}
+
+confirm_install_prompt() {
+    local software_name="$1"
+    confirm "$(color_yellow "$software_name") is not installed. Install now?"
 }
 
 confirm() {
@@ -95,7 +128,7 @@ start_sudo_keepalive() {
 
 ensure_command_line_tools() {
     if has_command_line_tools; then
-        echo "Xcode Command Line Tools are already installed."
+        installed_msg "Xcode Command Line Tools"
         return
     fi
 
@@ -114,7 +147,7 @@ cleanup() {
 
 install_homebrew() {
     if is_installed_cmd brew; then
-        echo "Homebrew is already installed."
+        installed_msg "Homebrew"
         return
     fi
 
@@ -244,7 +277,7 @@ configure_python_commands() {
 
 install_git() {
     if is_installed_cmd git; then
-        echo "Git is already installed: $(git --version)"
+        installed_with_version_msg "Git" "$(git --version)"
         return
     fi
 
@@ -253,50 +286,50 @@ install_git() {
     require_brew || return
     echo "Installing Git..."
     brew install git || return 1
-    echo "Installed: $(git --version)"
+    install_completed_msg "Git"
 }
 
 install_vscode() {
     if app_installed "Visual Studio Code"; then
-        echo "VS Code is already installed."
+        installed_msg "VS Code"
         return
     fi
 
     require_brew || return
     echo "Installing VS Code..."
     install_cask visual-studio-code || return 1
-    echo "VS Code installed."
+    install_completed_msg "VS Code"
 }
 
 install_iterm2() {
     if app_installed "iTerm"; then
-        echo "iTerm2 is already installed."
+        installed_msg "iTerm2"
         return
     fi
 
     require_brew || return
     echo "Installing iTerm2..."
     install_cask iterm2 || return 1
-    echo "iTerm2 installed."
+    install_completed_msg "iTerm2"
 }
 
 install_zsh() {
     if is_installed_cmd zsh; then
-        echo "zsh is already available: $(zsh --version)"
+        installed_with_version_msg "zsh" "$(zsh --version)"
         return
     fi
 
     require_brew || return
     echo "Installing zsh..."
     brew install zsh || return 1
-    echo "Installed: $(zsh --version)"
+    install_completed_msg "zsh"
 }
 
 install_oh_my_zsh() {
     local oh_my_zsh_dir="${HOME}/.oh-my-zsh"
 
     if [[ -d "$oh_my_zsh_dir" ]]; then
-        echo "Oh My Zsh is already installed."
+        installed_msg "Oh My Zsh"
         return
     fi
 
@@ -317,15 +350,15 @@ install_oh_my_zsh() {
 
     echo "Installing Oh My Zsh..."
     RUNZSH=no KEEP_ZSHRC=yes CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || return 1
-    echo "Oh My Zsh installed. Open a new terminal window or run: zsh"
+    echo "$(color_green "Oh My Zsh") installed. Open a new terminal window or run: zsh"
 }
 
 install_python() {
     if has_homebrew_python; then
-        echo "Homebrew Python is already installed: $(python3 --version)"
+        installed_with_version_msg "Homebrew Python" "$(python3 --version)"
         configure_python_commands || return 1
         if is_installed_cmd python && is_installed_cmd pip; then
-            echo "python and pip commands are available."
+            echo "$(color_green "python") and $(color_green "pip") commands are available."
         fi
         return
     fi
@@ -334,127 +367,139 @@ install_python() {
     echo "Installing Python..."
     brew install python || return 1
     configure_python_commands || return 1
-    echo "Installed: $(python3 --version)"
+    install_completed_msg "Python 3"
     if is_installed_cmd python && is_installed_cmd pip; then
-        echo "python and pip commands are available."
+        echo "$(color_green "python") and $(color_green "pip") commands are available."
     else
-        echo "python3/pip3 are installed. Open a new terminal to use python/pip without the 3 suffix."
+        echo "$(color_green "python3")/$(color_green "pip3") are installed. Open a new terminal to use python/pip without the 3 suffix."
     fi
 }
 
 install_golang() {
     if is_installed_cmd go; then
-        echo "Golang is already installed: $(go version)"
+        installed_with_version_msg "Golang" "$(go version)"
         return
     fi
 
     require_brew || return
     echo "Installing Golang..."
     brew install go || return 1
-    echo "Installed: $(go version)"
+    install_completed_msg "Golang"
 }
 
 install_raycast() {
     if app_installed "Raycast"; then
-        echo "Raycast is already installed."
+        installed_msg "Raycast"
         return
     fi
 
     require_brew || return
     echo "Installing Raycast..."
     install_cask raycast || return 1
-    echo "Raycast installed."
+    install_completed_msg "Raycast"
 }
 
 install_chrome() {
     if app_installed "Google Chrome"; then
-        echo "Google Chrome is already installed."
+        installed_msg "Google Chrome"
         return
     fi
 
     require_brew || return
     echo "Installing Google Chrome..."
     install_cask google-chrome || return 1
-    echo "Google Chrome installed."
+    install_completed_msg "Google Chrome"
 }
 
 install_freeplane() {
     if app_installed "Freeplane"; then
-        echo "Freeplane is already installed."
+        installed_msg "Freeplane"
         return
     fi
 
     require_brew || return
     echo "Installing Freeplane..."
     if install_cask freeplane; then
-        echo "Freeplane installed."
+        install_completed_msg "Freeplane"
         return
     fi
 
     echo "Freeplane install failed. Retrying after Homebrew metadata refresh (helps with occasional HTTP 403)."
     brew update >/dev/null 2>&1 || true
     HOMEBREW_CURL_RETRIES=5 install_cask freeplane || return 1
-    echo "Freeplane installed."
+    install_completed_msg "Freeplane"
 }
 
 install_ganttproject() {
     if app_installed "GanttProject"; then
-        echo "GanttProject is already installed."
+        installed_msg "GanttProject"
         return
     fi
 
     require_brew || return
     echo "Installing GanttProject..."
     install_cask ganttproject || return 1
-    echo "GanttProject installed."
+    install_completed_msg "GanttProject"
 }
 
 install_acrobat() {
     if app_installed "Adobe Acrobat Reader"; then
-        echo "Adobe Acrobat Reader is already installed."
+        installed_msg "Adobe Acrobat Reader"
         return
     fi
 
     require_brew || return
     echo "Installing Adobe Acrobat Reader..."
     install_cask adobe-acrobat-reader || return 1
-    echo "Adobe Acrobat Reader installed."
+    install_completed_msg "Adobe Acrobat Reader"
 }
 
 install_displaylink() {
     if app_installed "DisplayLink Manager"; then
-        echo "DisplayLink Manager is already installed."
+        installed_msg "DisplayLink Manager"
         return
     fi
 
     require_brew || return
     echo "Installing DisplayLink Manager..."
     install_cask displaylink || return 1
-    echo "DisplayLink Manager installed."
+    install_completed_msg "DisplayLink Manager"
 }
 
 install_anythingllm() {
     if app_installed "AnythingLLM"; then
-        echo "AnythingLLM is already installed."
+        installed_msg "AnythingLLM"
         return
     fi
 
     require_brew || return
     echo "Installing AnythingLLM..."
     install_cask anythingllm || return 1
-    echo "AnythingLLM installed."
+    install_completed_msg "AnythingLLM"
+}
+
+install_ollama() {
+    if is_installed_cmd ollama; then
+        installed_msg "Ollama"
+        return
+    fi
+
+    require_brew || return
+    echo "Installing Ollama..."
+    brew install ollama || return 1
+    install_completed_msg "Ollama"
 }
 
 install_bruno() {
     if app_installed "Bruno"; then
-        echo "Bruno is already installed."
+        installed_msg "Bruno"
         return
     fi
 
     require_brew || return
     echo "Installing Bruno..."
     install_cask bruno || return 1
-    echo "Bruno installed."
+    install_completed_msg "Bruno"
 }
 
 main() {
@@ -467,26 +512,26 @@ main() {
     echo "[Core Setup]"
 
     if is_installed_cmd brew; then
-        echo "Homebrew is already installed."
-    elif confirm "Homebrew is not installed. Install now?"; then
+        installed_msg "Homebrew"
+    elif confirm_install_prompt "Homebrew"; then
         attempt_install "Homebrew" install_homebrew
     fi
 
     if is_installed_cmd git; then
-        echo "Git is already installed: $(git --version)"
-    elif confirm "Git is not installed. Install now?"; then
+        installed_with_version_msg "Git" "$(git --version)"
+    elif confirm_install_prompt "Git"; then
         attempt_install "Git" install_git
     fi
 
     if has_github_ssh_key; then
-        echo "GitHub SSH key is already configured."
-    elif confirm "GitHub SSH key is not configured. Set it up now?"; then
+        echo "$(color_green "GitHub SSH key") is already configured."
+    elif confirm "$(color_yellow "GitHub SSH key") is not configured. Set it up now?"; then
         attempt_install "GitHub SSH Key" ensure_github_ssh_key
     fi
 
     if app_installed "Google Chrome"; then
-        echo "Google Chrome is already installed."
-    elif confirm "Google Chrome is not installed. Install now?"; then
+        installed_msg "Google Chrome"
+    elif confirm_install_prompt "Google Chrome"; then
         attempt_install "Google Chrome" install_chrome
     fi
 
@@ -494,44 +539,44 @@ main() {
     echo "[Development Tools]"
 
     if app_installed "Visual Studio Code"; then
-        echo "VS Code is already installed."
-    elif confirm "VS Code is not installed. Install now?"; then
+        installed_msg "VS Code"
+    elif confirm_install_prompt "VS Code"; then
         attempt_install "VS Code" install_vscode
     fi
 
     if app_installed "iTerm"; then
-        echo "iTerm2 is already installed."
-    elif confirm "iTerm2 is not installed. Install now?"; then
+        installed_msg "iTerm2"
+    elif confirm_install_prompt "iTerm2"; then
         attempt_install "iTerm2" install_iterm2
     fi
 
     if is_installed_cmd zsh; then
-        echo "zsh is already available: $(zsh --version)"
-    elif confirm "zsh is not installed. Install now?"; then
+        installed_with_version_msg "zsh" "$(zsh --version)"
+    elif confirm_install_prompt "zsh"; then
         attempt_install "zsh" install_zsh
     fi
 
     if [[ -d "${HOME}/.oh-my-zsh" ]]; then
-        echo "Oh My Zsh is already installed."
-    elif confirm "Oh My Zsh is not installed. Install now?"; then
+        installed_msg "Oh My Zsh"
+    elif confirm_install_prompt "Oh My Zsh"; then
         attempt_install "Oh My Zsh" install_oh_my_zsh
     fi
 
     if has_homebrew_python; then
-        echo "Homebrew Python is already installed: $(python3 --version)"
-    elif confirm "Python 3 is not installed. Install now?"; then
+        installed_with_version_msg "Homebrew Python" "$(python3 --version)"
+    elif confirm_install_prompt "Python 3"; then
         attempt_install "Python 3" install_python
     fi
 
     if is_installed_cmd go; then
-        echo "Golang is already installed: $(go version)"
-    elif confirm "Golang is not installed. Install now?"; then
+        installed_with_version_msg "Golang" "$(go version)"
+    elif confirm_install_prompt "Golang"; then
         attempt_install "Golang" install_golang
     fi
 
     if app_installed "Bruno"; then
-        echo "Bruno is already installed."
-    elif confirm "Bruno is not installed. Install now?"; then
+        installed_msg "Bruno"
+    elif confirm_install_prompt "Bruno"; then
         attempt_install "Bruno" install_bruno
     fi
 
@@ -539,26 +584,26 @@ main() {
     echo "[Productivity]"
 
     if app_installed "Raycast"; then
-        echo "Raycast is already installed."
-    elif confirm "Raycast is not installed. Install now?"; then
+        installed_msg "Raycast"
+    elif confirm_install_prompt "Raycast"; then
         attempt_install "Raycast" install_raycast
     fi
 
     if app_installed "Freeplane"; then
-        echo "Freeplane is already installed."
-    elif confirm "Freeplane is not installed. Install now?"; then
+        installed_msg "Freeplane"
+    elif confirm_install_prompt "Freeplane"; then
         attempt_install "Freeplane" install_freeplane
     fi
 
     if app_installed "GanttProject"; then
-        echo "GanttProject is already installed."
-    elif confirm "GanttProject is not installed. Install now?"; then
+        installed_msg "GanttProject"
+    elif confirm_install_prompt "GanttProject"; then
         attempt_install "GanttProject" install_ganttproject
     fi
 
     if app_installed "Adobe Acrobat Reader"; then
-        echo "Adobe Acrobat Reader is already installed."
-    elif confirm "Adobe Acrobat Reader is not installed. Install now?"; then
+        installed_msg "Adobe Acrobat Reader"
+    elif confirm_install_prompt "Adobe Acrobat Reader"; then
         attempt_install "Adobe Acrobat Reader" install_acrobat
     fi
 
@@ -566,8 +611,8 @@ main() {
     echo "[Drivers & Hardware]"
 
     if app_installed "DisplayLink Manager"; then
-        echo "DisplayLink Manager is already installed."
-    elif confirm "DisplayLink Manager is not installed. Install now?"; then
+        installed_msg "DisplayLink Manager"
+    elif confirm_install_prompt "DisplayLink Manager"; then
         attempt_install "DisplayLink Manager" install_displaylink
     fi
 
@@ -575,9 +620,15 @@ main() {
     echo "[AI Tools]"
 
     if app_installed "AnythingLLM"; then
-        echo "AnythingLLM is already installed."
-    elif confirm "AnythingLLM is not installed. Install now?"; then
+        installed_msg "AnythingLLM"
+    elif confirm_install_prompt "AnythingLLM"; then
         attempt_install "AnythingLLM" install_anythingllm
+    fi
+
+    if is_installed_cmd ollama; then
+        installed_msg "Ollama"
+    elif confirm_install_prompt "Ollama"; then
+        attempt_install "Ollama" install_ollama
     fi
 
     print_error_summary

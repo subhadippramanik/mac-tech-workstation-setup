@@ -23,6 +23,10 @@ chmod +x install-essentials.sh
 
 The script asks for confirmation before each install.
 
+Console output styling:
+- Software names in install prompts are shown in yellow.
+- Software names that are already installed (or installed successfully) are shown in green.
+
 ## What the script does
 
 - Checks for Xcode Command Line Tools and opens the macOS installer if they are missing
@@ -62,6 +66,7 @@ The script asks for confirmation before each install.
 ### AI Tools
 
 - AnythingLLM
+- Ollama
 
 ## Notes
 
